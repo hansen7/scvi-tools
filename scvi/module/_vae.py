@@ -346,7 +346,7 @@ class VAE(BaseLatentModeModuleClass):
                 )
         else:
             raise ValueError(f"Unknown latent data type: {self.latent_data_type}")
-        outputs = dict(z=z, qz_m=qzm, qz_v=qzv, ql=None, library=library)
+        outputs = dict(z=z, qz_m=qzm, qz_v=qzv, ql=None, library=library, qz=dist)
         return outputs
 
     @auto_move_data
@@ -440,9 +440,7 @@ class VAE(BaseLatentModeModuleClass):
     ):
         """Computes the loss function for the model."""
         x = tensors[REGISTRY_KEYS.X_KEY]
-        kl_divergence_z = kl(inference_outputs["qz"], generative_outputs["pz"]).sum(
-            dim=1
-        )
+        kl_divergence_z = 0
         if not self.use_observed_lib_size:
             kl_divergence_l = kl(
                 inference_outputs["ql"],

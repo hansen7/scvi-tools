@@ -74,7 +74,7 @@ class LossOutput:
     reconstruction_loss: Optional[LossRecord] = None
     kl_local: Optional[LossRecord] = None
     kl_global: Optional[LossRecord] = None
-    extra_metrics: Optional[Dict[str, Tensor]] = field(default_factory=dict)
+    # extra_metrics: Optional[Dict[str, Tensor]] = field(default_factory=dict)
     n_obs_minibatch: Optional[int] = None
     reconstruction_loss_sum: Tensor = field(default=None, init=False)
     kl_local_sum: Tensor = field(default=None, init=False)
@@ -105,6 +105,7 @@ class LossOutput:
         if self.reconstruction_loss is not None and self.n_obs_minibatch is None:
             rec_loss = self.reconstruction_loss
             self.n_obs_minibatch = list(rec_loss.values())[0].shape[0]
+        self.extra_metrics = {}
 
     @staticmethod
     def dict_sum(dictionary: Union[Dict[str, Tensor], Tensor]):
