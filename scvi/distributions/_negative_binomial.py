@@ -259,7 +259,7 @@ class Poisson(PoissonTorch):
     def __init__(
         self,
         rate: torch.Tensor,
-        validate_args: Optional[bool] = None,
+        validate_args: Optional[bool] = False,
         scale: Optional[torch.Tensor] = None,
     ):
         super().__init__(rate=rate, validate_args=validate_args)

@@ -5,6 +5,7 @@ from typing import Optional, Union
 import numpy as np
 import pandas as pd
 import pytorch_lightning as pl
+import torch
 
 from scvi.dataloaders import DataSplitter, SemiSupervisedDataSplitter
 from scvi.model._utils import parse_use_gpu_arg
@@ -79,6 +80,8 @@ class TrainRunner:
             self.training_plan.n_obs_training = self.data_splitter.n_train
         if hasattr(self.data_splitter, "n_val"):
             self.training_plan.n_obs_validation = self.data_splitter.n_val
+
+        self.training_plan = torch.compile(self.training_plan, mode="reduce-overhead")
 
         self.trainer.fit(self.training_plan, self.data_splitter)
         self._update_history()

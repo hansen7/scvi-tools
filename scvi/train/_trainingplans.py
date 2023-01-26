@@ -342,7 +342,7 @@ class TrainingPlan(TunableMixin, pl.LightningModule):
         if "kl_weight" in self.loss_kwargs:
             kl_weight = self.kl_weight
             self.loss_kwargs.update({"kl_weight": kl_weight})
-            self.log("kl_weight", kl_weight, on_step=True, on_epoch=False)
+            # self.log("kl_weight", torch.tensor(kl_weight), on_step=True, on_epoch=False)
         _, _, scvi_loss = self.forward(batch, loss_kwargs=self.loss_kwargs)
         self.log("train_loss", scvi_loss.loss, on_epoch=True)
         self.compute_and_log_metrics(scvi_loss, self.train_metrics, "train")
