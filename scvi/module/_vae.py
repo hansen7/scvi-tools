@@ -433,13 +433,20 @@ class VAE(BaseMinifiedModeModuleClass):
             px_r = F.linear(
                 one_hot(y, self.n_labels), self.px_r
             )  # px_r gets transposed - last dimension is nb genes
+            
         elif self.dispersion == "gene-batch":
             px_r = F.linear(one_hot(batch_index, self.n_batch), self.px_r)
+            # (# cell, # gene) -> cell from the same batch share exact stats
         elif self.dispersion == "gene":
-            px_r = self.px_r
+            px_r = self.px_r  # (# gene)
 
         px_r = torch.exp(px_r)
-        # px_r (# gene) -> inverse dispersion
+        ''' shapes of px_r
+            (# gene) when self.dispersion == "gene
+            '''
+        # px_r 
+        #   (# gene) -> inverse dispersion
+        
 
         if self.gene_likelihood == "zinb":
             px = ZeroInflatedNegativeBinomial(
