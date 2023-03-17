@@ -387,7 +387,36 @@ class VAE(BaseMinifiedModeModuleClass):
 
         if not self.use_size_factor_key:
             size_factor = library
+        # size_factor: (batch, 1)
 
+        '''
+        DecoderSCVI(
+        (px_decoder): FCLayers(
+            (fc_layers): Sequential(
+            (Layer 0): Sequential(
+                (0): Linear(in_features=46, out_features=128, bias=True)
+                (1): BatchNorm1d(128, eps=0.001, momentum=0.01, affine=True, track_running_stats=True)
+                (2): None
+                (3): ReLU()
+                (4): None
+            )
+            (Layer 1): Sequential(
+                (0): Linear(in_features=144, out_features=128, bias=True)
+                (1): BatchNorm1d(128, eps=0.001, momentum=0.01, affine=True, track_running_stats=True)
+                (2): None
+                (3): ReLU()
+                (4): None
+            )
+            )
+        )
+        (px_scale_decoder): Sequential(
+            (0): Linear(in_features=128, out_features=2000, bias=True)
+            (1): Softmax(dim=-1)
+        )
+        (px_r_decoder): Linear(in_features=128, out_features=2000, bias=True)
+        (px_dropout_decoder): Linear(in_features=128, out_features=2000, bias=True)
+        )
+        '''
         px_scale, px_r, px_rate, px_dropout = self.decoder(
             self.dispersion,
             decoder_input,
@@ -396,6 +425,10 @@ class VAE(BaseMinifiedModeModuleClass):
             *categorical_input,
             y,
         )
+        # px_scale (# cell/batch, # gene) -> normalized mean expression of the distribution.
+        # px_rate (# cell, # gene) -> mean of the distribution
+        # px_dropout (# cell, # gene) -> dropout rates
+
         if self.dispersion == "gene-label":
             px_r = F.linear(
                 one_hot(y, self.n_labels), self.px_r
@@ -406,6 +439,7 @@ class VAE(BaseMinifiedModeModuleClass):
             px_r = self.px_r
 
         px_r = torch.exp(px_r)
+        # px_r (# gene) -> inverse dispersion
 
         if self.gene_likelihood == "zinb":
             px = ZeroInflatedNegativeBinomial(
@@ -415,7 +449,16 @@ class VAE(BaseMinifiedModeModuleClass):
                 scale=px_scale,
             )
         elif self.gene_likelihood == "nb":
+            '''
+            mu(px_rate): (#Cell/Batch, #Gene)
+                Mean of the distribution
+            theta(px_r): (#Gene)
+                Inverse dispersion
+            scale(px_scale): (#Cell/Batch, #Gene)
+                Normalised mean expression of the distribution
+            '''
             px = NegativeBinomial(mu=px_rate, theta=px_r, scale=px_scale)
+            ''' px -> <class 'scvi.distributions._negative_binomial.NegativeBinomial'> '''
         elif self.gene_likelihood == "poisson":
             px = Poisson(px_rate, scale=px_scale)
 
@@ -455,6 +498,7 @@ class VAE(BaseMinifiedModeModuleClass):
         else:
             kl_divergence_l = torch.tensor(0.0, device=x.device)
 
+        ''' this is where it calculate noises '''
         reconst_loss = -generative_outputs["px"].log_prob(x).sum(-1)
 
         kl_local_for_warmup = kl_divergence_z

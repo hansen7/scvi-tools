@@ -402,11 +402,35 @@ class DecoderSCVI(nn.Module):
 
         """
         # The decoder returns values for the parameters of the ZINB distribution
+        
+        ''' hc's note
+        px: (# cell/batch, # cell/batch)
+        
+        z (# cell/batch, latent) -> 
+        px (# cell/batch, # gene) -> normalized mean expression of the distribution.
+        px_scale (# cell/batch, # gene) -> normalized mean expression of the distribution.
+        px_rate (# cell, # gene) -> mean of the distribution
+        px_dropout (# cell, # gene) -> dropout rates
+        px_r (# gene) -> inverse dispersion
+        
+        '''
         px = self.px_decoder(z, *cat_list)
-        px_scale = self.px_scale_decoder(px)
-        px_dropout = self.px_dropout_decoder(px)
+        px_scale = self.px_scale_decoder(px)  # (# cell/batch, # gene)
+        ''' 
+        self.px_scale_decoder
+            Sequential(
+            (0): Linear(in_features=128, out_features=2000, bias=True)
+            (1): Softmax(dim=-1) -> for normalization
+            )
+        '''
+        px_dropout = self.px_dropout_decoder(px)  # (# cell/batch, # gene)
+        '''
+        self.px_dropout_decoder
+            Linear(in_features=128, out_features=2000, bias=True)
+        '''
+        
         # Clamp to high value: exp(12) ~ 160000 to avoid nans (computational stability)
-        px_rate = torch.exp(library) * px_scale  # torch.clamp( , max=12)
+        px_rate = torch.exp(library) * px_scale  # torch.clamp( , max=12)  # (# cell/batch, # gene)
         px_r = self.px_r_decoder(px) if dispersion == "gene-cell" else None
         return px_scale, px_r, px_rate, px_dropout
 
